@@ -1,0 +1,2 @@
+# 每天凌晨 3 點更新資料
+0 3 * * * node /app/scripts/fetchData.js >> /var/log/cron.log 2>&1

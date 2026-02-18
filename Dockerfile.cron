@@ -1,0 +1,18 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 安裝 cron
+RUN apk add --no-cache cron
+
+# 複製腳本
+COPY scripts/ /app/scripts/
+COPY package.json package-lock.json* ./
+
+RUN npm ci
+
+# 複製 crontab
+COPY crontab /etc/crontabs/root
+
+# 啟動 cron
+CMD ["sh", "-c", "crond && tail -f /dev/null"]
