@@ -33,16 +33,11 @@ RUN mkdir -p /app/public /app/src/data
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Copy static files from builder if they exist
-# (public folder may not exist in Next.js projects)
-RUN if [ -d /app/public ]; then \
-      cp -r /app/public ./public; \
-    fi
+# Copy public folder contents only (not the folder itself)
+COPY --from=builder --chmod=755 --chown=nextjs:nodejs /app/public ./public || true
 
 # Copy data files if they exist
-RUN if [ -d /app/src/data ]; then \
-      cp -r /app/src/data ./src/data; \
-    fi
+COPY --from=builder --chmod=755 --chown=nextjs:nodejs /app/src/data ./src/data || true
 
 USER nextjs
 
