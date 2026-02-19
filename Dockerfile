@@ -1,5 +1,5 @@
 # ============================================
-# Build Next.js frontend for Zeabur
+# Build Next.js frontend for Vultr
 # ============================================
 FROM node:20-alpine AS builder
 
@@ -26,18 +26,12 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Create necessary directories
+# Create directories
 RUN mkdir -p /app/public /app/src/data
 
 # Copy standalone output (required)
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-
-# Copy public folder contents only (not the folder itself)
-COPY --from=builder --chmod=755 --chown=nextjs:nodejs /app/public ./public || true
-
-# Copy data files if they exist
-COPY --from=builder --chmod=755 --chown=nextjs:nodejs /app/src/data ./src/data || true
 
 USER nextjs
 
