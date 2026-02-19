@@ -14,6 +14,9 @@ services:
       - NEXT_PUBLIC_API_URL=${API_URL}
       - NEXT_PUBLIC_POCKETBASE_URL=${POCKETBASE_URL}
       - NODE_ENV=production
+    volumes:
+      # 資料檔案（可選：更新資料時不用重新 build）
+      - ./frontend/src/data:/app/src/data:ro
     env_file:
       - .env
     restart: unless-stopped
