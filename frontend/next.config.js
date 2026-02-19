@@ -1,10 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // 輸出靜態檔案（用於 Static 部署）
-  output: 'export',
-  // 靜態輸出時禁用圖片優化
-  images: { unoptimized: true },
+  // Docker 部署需要 standalone output
+  output: 'standalone',
   // 確保靜態檔案被複製
   outputFileTracingIncludes: {
     '/data/**': ['./src/data/**'],
