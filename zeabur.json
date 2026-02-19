@@ -2,7 +2,7 @@
   "$schema": "https://github.com/zeabur/zeabur/main/packages/config-schema/schema.json",
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfile": "Dockerfile"
+    "dockerfile": "frontend/Dockerfile"
   },
   "deploy": {
     "region": "tw"
