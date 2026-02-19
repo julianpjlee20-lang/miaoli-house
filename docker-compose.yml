@@ -11,13 +11,19 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=${API_URL:-http://localhost:8090}
-      - NEXT_PUBLIC_POCKETBASE_URL=${POCKETBASE_URL:-http://localhost:8090}
-    depends_on:
-      - pocketbase
+      - NEXT_PUBLIC_API_URL=${API_URL}
+      - NEXT_PUBLIC_POCKETBASE_URL=${POCKETBASE_URL}
+      - NODE_ENV=production
+    env_file:
+      - .env
     restart: unless-stopped
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # ============================================
   # Backend - PocketBase
@@ -29,12 +35,23 @@ services:
     volumes:
       - ./backend/pb_data:/pb_data
       - ./backend/pb_migrations:/pb_migrations
-    command: serve --http=8090 --dir=/pb_data --encryptionEnv=inbucketSecret
+    command: >
+      sh -c "
+        /pocketbase migrate up &&
+        /pocketbase serve --http=8090 --dir=/pb_data
+      "
     environment:
       - PB_SECRETS=${POCKETBASE_SECRETS}
+    env_file:
+      - .env
     restart: unless-stopped
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # ============================================
   # Storage - MinIO
@@ -43,7 +60,7 @@ services:
     image: minio/minio:latest
     ports:
       - "9000:9000"
-      - "9001:9001"  # Console
+      - "9001:9001"
     volumes:
       - ./minio/data:/data
     environment:
@@ -53,36 +70,24 @@ services:
     restart: unless-stopped
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # ============================================
-  # Cron - 資料更新
-  # ============================================
-  cron:
-    build:
-      context: .
-      dockerfile: Dockerfile.cron
-    environment:
-      - POCKETBASE_URL=${POCKETBASE_URL:-http://pocketbase:8090}
-      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio:9000}
-      - MINIO_BUCKET=presale-data
-    depends_on:
-      - pocketbase
-      - minio
-    restart: unless-stopped
-    networks:
-      - app-network
-
-  # ============================================
-  # Nginx - Reverse Proxy
+  # Nginx - Reverse Proxy + SSL
   # ============================================
   nginx:
     image: nginx:latest
     ports:
-      - "80:80"
-      - "443:443"
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
       - frontend
       - pocketbase
