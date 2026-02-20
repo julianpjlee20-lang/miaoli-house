@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 interface SaleRecord {
   id: number;
@@ -24,40 +25,49 @@ interface PresaleRecord {
   transactionDate: string;
 }
 
-// Linear design tokens
-const tokens = {
-  // Background colors
-  bgPrimary: '#0D0D0F',
-  bgSecondary: '#141417',
-  bgTertiary: '#1A1A1E',
-  bgElevated: '#222226',
-  
-  // Border colors
-  border: '#2A2A30',
-  borderSubtle: '#1E1E23',
-  
-  // Text colors  
-  textPrimary: '#FFFFFF',
-  textSecondary: '#8A8A8E',
-  textTertiary: '#5C5C60',
-  
-  // Accent - Linear purple
-  accent: '#5E6AD2',
-  accentHover: '#6F7BE8',
-  accentMuted: 'rgba(94, 106, 210, 0.15)',
-  
-  // Status colors
-  success: '#32D583',
-  warning: '#F5A623',
-  error: '#FF6B6B',
+// Theme tokens
+const themes = {
+  dark: {
+    bgPrimary: '#0D0D0F',
+    bgSecondary: '#141417',
+    bgTertiary: '#1A1A1E',
+    border: '#2A2A30',
+    borderSubtle: '#1E1E23',
+    textPrimary: '#FFFFFF',
+    textSecondary: '#8A8A8E',
+    textTertiary: '#5C5C60',
+    accent: '#5E6AD2',
+    accentHover: '#6F7BE8',
+    success: '#32D583',
+  },
+  light: {
+    bgPrimary: '#FFFFFF',
+    bgSecondary: '#F8F9FA',
+    bgTertiary: '#F1F3F5',
+    border: '#E9ECEF',
+    borderSubtle: '#DEE2E6',
+    textPrimary: '#1A1A1E',
+    textSecondary: '#6C757D',
+    textTertiary: '#ADB5BD',
+    accent: '#5E6AD2',
+    accentHover: '#4A5AB9',
+    success: '#32D583',
+  }
 };
 
 export default function Home() {
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [activeTab, setActiveTab] = useState<'sale' | 'presale'>('sale');
   const [sales, setSales] = useState<SaleRecord[]>([]);
   const [presales, setPresales] = useState<PresaleRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const t = themes[theme];
+
+  useEffect(() => {
+    const saved = localStorage.getItem('theme') as 'dark' | 'light';
+    if (saved) setTheme(saved);
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -68,13 +78,19 @@ export default function Home() {
         if (result.sales) setSales(result.sales);
         if (result.presales) setPresales(result.presales);
       } catch (err) {
-        setError('無法載入資料');
+        console.error(err);
       } finally {
         setLoading(false);
       }
     }
     fetchData();
   }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+  };
 
   const formatPrice = (price: number) => {
     if (!price) return '—';
@@ -94,62 +110,54 @@ export default function Home() {
     ? Math.max(...sales.map(s => s.price), 0)
     : Math.max(...presales.map(p => p.totalPrice), 0);
 
-  if (loading) {
-    return (
-      <div style={{ 
-        backgroundColor: tokens.bgPrimary, 
-        minHeight: '100vh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-      }}>
-        <div style={{ 
-          width: 20, height: 20, 
-          border: '2px solid ' + tokens.border, 
-          borderTopColor: tokens.accent, 
-          borderRadius: '50%', 
-          animation: 'spin 0.8s linear infinite' 
-        }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
-
   return (
     <div style={{ 
-      backgroundColor: tokens.bgPrimary, 
+      backgroundColor: t.bgPrimary, 
       minHeight: '100vh',
-      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      color: tokens.textPrimary,
+      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      color: t.textPrimary,
       lineHeight: 1.5
     }}>
       {/* Header */}
       <header style={{ 
-        borderBottom: `1px solid ${tokens.border}`, 
-        backgroundColor: tokens.bgSecondary,
+        borderBottom: `1px solid ${t.border}`, 
+        backgroundColor: t.bgSecondary,
         padding: '16px 24px',
         position: 'sticky',
         top: 0,
-        zIndex: 50
+        zIndex: 50,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
       }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <h1 style={{ 
-            fontSize: 18, 
-            fontWeight: 600, 
-            margin: 0,
-            letterSpacing: '-0.02em'
-          }}>
+        <div>
+          <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0, letterSpacing: '-0.02em' }}>
             苗栗縣後龍鎮 · 不動產交易資料
           </h1>
-          <p style={{ color: tokens.textSecondary, fontSize: 13, margin: '4px 0 0 0' }}>
+          <p style={{ color: t.textSecondary, fontSize: 13, margin: '4px 0 0 0' }}>
             內政部實價登錄 · 2025年
           </p>
         </div>
+        <button 
+          onClick={toggleTheme}
+          style={{
+            background: t.bgTertiary,
+            border: `1px solid ${t.border}`,
+            color: t.textPrimary,
+            padding: '8px 16px',
+            borderRadius: 6,
+            cursor: 'pointer',
+            fontSize: 13,
+            fontWeight: 500,
+            transition: 'all 0.15s ease'
+          }}
+        >
+          {theme === 'dark' ? '☀️ 亮色模式' : '🌙 暗色模式'}
+        </button>
       </header>
 
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: '24px' }}>
-        {/* Tabs - Linear style */}
+        {/* Tabs */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
           {[
             { key: 'sale', label: '買賣成交', count: sales.length },
@@ -159,9 +167,9 @@ export default function Home() {
               key={tab.key}
               onClick={() => setActiveTab(tab.key as any)}
               style={{
-                background: activeTab === tab.key ? tokens.accentMuted : 'transparent',
-                color: activeTab === tab.key ? tokens.accent : tokens.textSecondary,
-                border: activeTab === tab.key ? `1px solid ${tokens.accent}` : '1px solid transparent',
+                background: activeTab === tab.key ? t.accent + '20' : 'transparent',
+                color: activeTab === tab.key ? t.accent : t.textSecondary,
+                border: activeTab === tab.key ? `1px solid ${t.accent}` : '1px solid transparent',
                 padding: '8px 16px',
                 fontSize: 13,
                 fontWeight: 500,
@@ -171,18 +179,12 @@ export default function Home() {
               }}
             >
               {tab.label}
-              <span style={{ 
-                marginLeft: 6, 
-                fontSize: 12, 
-                opacity: 0.7 
-              }}>
-                {tab.count}
-              </span>
+              <span style={{ marginLeft: 6, fontSize: 12, opacity: 0.7 }}>{tab.count}</span>
             </button>
           ))}
         </div>
 
-        {/* Stats - Linear cards */}
+        {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
           {[
             { label: '總筆數', value: activeTab === 'sale' ? sales.length : presales.length },
@@ -190,77 +192,77 @@ export default function Home() {
             { label: '最高價格', value: formatPrice(maxPrice) }
           ].map((stat, i) => (
             <div key={i} style={{ 
-              backgroundColor: tokens.bgSecondary, 
-              border: `1px solid ${tokens.border}`, 
+              backgroundColor: t.bgSecondary, 
+              border: `1px solid ${t.border}`, 
               borderRadius: 8, 
               padding: '16px 20px'
             }}>
-              <p style={{ color: tokens.textSecondary, fontSize: 11, margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <p style={{ color: t.textSecondary, fontSize: 11, margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {stat.label}
               </p>
-              <p style={{ color: tokens.textPrimary, fontSize: 20, fontWeight: 600, margin: '4px 0 0 0' }}>
+              <p style={{ color: t.textPrimary, fontSize: 20, fontWeight: 600, margin: '4px 0 0 0' }}>
                 {stat.value}
               </p>
             </div>
           ))}
         </div>
 
-        {/* Table - Linear style */}
+        {/* Table */}
         <div style={{ 
-          backgroundColor: tokens.bgSecondary, 
-          border: `1px solid ${tokens.border}`, 
+          backgroundColor: t.bgSecondary, 
+          border: `1px solid ${t.border}`, 
           borderRadius: 8,
           overflow: 'hidden'
         }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr style={{ borderBottom: `1px solid ${tokens.border}` }}>
-                <th style={{ textAlign: 'left', padding: '12px 16px', color: tokens.textSecondary, fontWeight: 500, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <tr style={{ borderBottom: `1px solid ${t.border}` }}>
+                <th style={{ textAlign: 'left', padding: '12px 16px', color: t.textSecondary, fontWeight: 500, fontSize: 11, textTransform: 'uppercase' }}>
                   {activeTab === 'sale' ? '地址' : '建案'}
                 </th>
-                <th style={{ textAlign: 'left', padding: '12px 16px', color: tokens.textSecondary, fontWeight: 500, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  類型
-                </th>
-                <th style={{ textAlign: 'right', padding: '12px 16px', color: tokens.textSecondary, fontWeight: 500, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  面積
-                </th>
-                <th style={{ textAlign: 'right', padding: '12px 16px', color: tokens.textSecondary, fontWeight: 500, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  價格
-                </th>
-                <th style={{ textAlign: 'right', padding: '12px 16px', color: tokens.textSecondary, fontWeight: 500, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  日期
-                </th>
+                <th style={{ textAlign: 'left', padding: '12px 16px', color: t.textSecondary, fontWeight: 500, fontSize: 11, textTransform: 'uppercase' }}>類型</th>
+                <th style={{ textAlign: 'right', padding: '12px 16px', color: t.textSecondary, fontWeight: 500, fontSize: 11, textTransform: 'uppercase' }}>面積</th>
+                <th style={{ textAlign: 'right', padding: '12px 16px', color: t.textSecondary, fontWeight: 500, fontSize: 11, textTransform: 'uppercase' }}>價格</th>
+                <th style={{ textAlign: 'right', padding: '12px 16px', color: t.textSecondary, fontWeight: 500, fontSize: 11, textTransform: 'uppercase' }}>日期</th>
               </tr>
             </thead>
             <tbody>
               {activeTab === 'sale' ? (
                 sales.map((record) => (
-                  <tr key={record.id} style={{ borderBottom: `1px solid ${tokens.borderSubtle}` }}>
-                    <td style={{ padding: '14px 16px', color: tokens.textPrimary, fontWeight: 500 }}>{record.address || '—'}</td>
-                    <td style={{ padding: '14px 16px', color: tokens.textSecondary, fontSize: 12 }}>{record.buildingType || '—'}</td>
-                    <td style={{ padding: '14px 16px', color: tokens.textSecondary, textAlign: 'right', fontSize: 12 }}>
+                  <tr 
+                    key={record.id} 
+                    style={{ borderBottom: `1px solid ${t.borderSubtle}`, cursor: 'pointer' }}
+                    onClick={() => window.location.href = `/project/${record.id}`}
+                  >
+                    <td style={{ padding: '14px 16px', color: t.textPrimary, fontWeight: 500 }}>{record.address || '—'}</td>
+                    <td style={{ padding: '14px 16px', color: t.textSecondary, fontSize: 12 }}>{record.buildingType || '—'}</td>
+                    <td style={{ padding: '14px 16px', color: t.textSecondary, textAlign: 'right', fontSize: 12 }}>
                       {record.areaBuilding ? record.areaBuilding.toFixed(1) + ' 坪' : '—'}
                     </td>
-                    <td style={{ padding: '14px 16px', color: tokens.success, fontWeight: 600, textAlign: 'right', fontSize: 13 }}>
+                    <td style={{ padding: '14px 16px', color: t.success, fontWeight: 600, textAlign: 'right', fontSize: 13 }}>
                       {formatPrice(record.price)}
                     </td>
-                    <td style={{ padding: '14px 16px', color: tokens.textTertiary, textAlign: 'right', fontSize: 12 }}>
+                    <td style={{ padding: '14px 16px', color: t.textTertiary, textAlign: 'right', fontSize: 12 }}>
                       {formatDate(record.transactionDate)}
                     </td>
                   </tr>
                 ))
               ) : (
                 presales.map((record) => (
-                  <tr key={record.id} style={{ borderBottom: `1px solid ${tokens.borderSubtle}` }}>
-                    <td style={{ padding: '14px 16px', color: tokens.accent, fontWeight: 500 }}>{record.projectName || '—'}</td>
-                    <td style={{ padding: '14px 16px', color: tokens.textSecondary, fontSize: 12 }}>{record.address || '—'}</td>
-                    <td style={{ padding: '14px 16px', color: tokens.textSecondary, textAlign: 'right', fontSize: 12 }}>
+                  <tr 
+                    key={record.id} 
+                    style={{ borderBottom: `1px solid ${t.borderSubtle}`, cursor: 'pointer' }}
+                    onClick={() => window.location.href = `/project/${record.id}`}
+                  >
+                    <td style={{ padding: '14px 16px', color: t.accent, fontWeight: 500 }}>{record.projectName || '—'}</td>
+                    <td style={{ padding: '14px 16px', color: t.textSecondary, fontSize: 12 }}>{record.address || '—'}</td>
+                    <td style={{ padding: '14px 16px', color: t.textSecondary, textAlign: 'right', fontSize: 12 }}>
                       {record.area ? record.area.toFixed(1) + ' 坪' : '—'}
                     </td>
-                    <td style={{ padding: '14px 16px', color: tokens.accent, fontWeight: 600, textAlign: 'right', fontSize: 13 }}>
+                    <td style={{ padding: '14px 16px', color: t.accent, fontWeight: 600, textAlign: 'right', fontSize: 13 }}>
                       {formatPrice(record.totalPrice)}
                     </td>
-                    <td style={{ padding: '14px 16px', color: tokens.textTertiary, textAlign: 'right', fontSize: 12 }}>
+                    <td style={{ padding: '14px 16px', color: t.textTertiary, textAlign: 'right', fontSize: 12 }}>
                       {formatDate(record.transactionDate)}
                     </td>
                   </tr>
@@ -270,8 +272,8 @@ export default function Home() {
           </table>
         </div>
 
-        <footer style={{ textAlign: 'center', padding: '32px 0', color: tokens.textTertiary, fontSize: 11 }}>
-          資料來源：內政部不動產交易實價查詢服務網
+        <footer style={{ textAlign: 'center', padding: '32px 0', color: t.textTertiary, fontSize: 11 }}>
+          資料來源：內政部不動產交易實價查詢服務網 · 點擊任一列查看詳情
         </footer>
       </main>
     </div>
