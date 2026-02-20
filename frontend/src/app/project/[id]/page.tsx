@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 
 interface SaleRecord {
   id: number;
@@ -57,8 +57,8 @@ const themes = {
   }
 };
 
-export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function ProjectPage({ params }: { params: { id: string } }) {
+  const id = params.id;
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -66,7 +66,6 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const t = themes[theme];
 
   useEffect(() => {
-    // Load theme preference
     const saved = localStorage.getItem('theme') as 'dark' | 'light';
     if (saved) setTheme(saved);
   }, []);
@@ -75,20 +74,17 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     async function fetchData() {
       setLoading(true);
       try {
-        // 嘗試取得特定 ID 的資料
-        const response = await fetch(`/api/transactions?type=all`);
+        const response = await fetch('/api/transactions?type=all');
         const result = await response.json();
         
-        // 合併買賣和預售資料
         const allData = [
           ...(result.sales || []).map((s: any) => ({ ...s, type: 'sale' })),
           ...(result.presales || []).map((p: any) => ({ ...p, type: 'presale' }))
         ];
         
-        // 找符合的資料（嘗試用 ID 或 projectName）
         const found = allData.find((item: any) => 
           item.id === parseInt(id) || 
-          item.projectName?.includes(decodeURIComponent(id))
+          (item.projectName && item.projectName.includes(decodeURIComponent(id)))
         );
         
         setData(found || null);
