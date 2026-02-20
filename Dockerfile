@@ -5,14 +5,17 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install pnpm
+RUN npm install -g pnpm
+
 # Copy frontend files
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm ci
+COPY frontend/package.json frontend/pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile
 
 COPY frontend/ .
 
 # Build with standalone output
-RUN npm run build
+RUN pnpm build
 
 # ============================================
 # Runner
