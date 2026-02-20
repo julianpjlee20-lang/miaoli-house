@@ -161,14 +161,13 @@ export default function Home() {
               style={{
                 background: activeTab === tab.key ? tokens.accentMuted : 'transparent',
                 color: activeTab === tab.key ? tokens.accent : tokens.textSecondary,
-                border: 'none',
+                border: activeTab === tab.key ? `1px solid ${tokens.accent}` : '1px solid transparent',
                 padding: '8px 16px',
                 fontSize: 13,
                 fontWeight: 500,
                 borderRadius: 6,
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                border: activeTab === tab.key ? `1px solid ${tokens.accent}` : '1px solid transparent'
+                transition: 'all 0.15s ease'
               }}
             >
               {tab.label}
