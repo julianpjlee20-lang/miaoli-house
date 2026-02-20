@@ -7,77 +7,71 @@ const pool = new Pool({
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const type = searchParams.get('type') || 'all'; // all, sale, presale
-  const district = searchParams.get('district') || '後龍鎮';
+  const type = searchParams.get('type') || 'all';
 
   try {
-    let query = '';
-    let params: any[] = [district];
-
     if (type === 'sale') {
-      query = `
+      const result = await pool.query(`
         SELECT 
-          id, city, district, road as address, building_type as "buildingType",
+          id, city, district, road as "address", building_type as "buildingType",
           area_building as "areaBuilding", area_land as "areaLand",
           price, price_per_ping as "pricePerPing", 
           floor, total_floors as "totalFloors",
           build_year as "buildYear", transaction_date as "transactionDate",
           transaction_type as "transactionType"
         FROM real_estate_transactions 
-        WHERE district = $1
+        WHERE district = '後龍鎮'
         ORDER BY transaction_date DESC
         LIMIT 100
-      `;
-    } else if (type === 'presale') {
-      query = `
+      `);
+      return NextResponse.json({ data: result.rows, count: result.rows.length });
+    } 
+    
+    if (type === 'presale') {
+      const result = await pool.query(`
         SELECT 
           id, city, district, project_name as "projectName", 
           developer, address, unit_price as "unitPrice",
           total_price as "totalPrice", area, floor,
           transaction_date as "transactionDate"
         FROM presale_transactions 
-        WHERE district = $1
+        WHERE district = '後龍鎮'
         ORDER BY transaction_date DESC
         LIMIT 100
-      `;
-    } else {
-      // Return both
-      const [sales, presales] = await Promise.all([
-        pool.query(`
-          SELECT 
-            id, city, district, road as address, building_type as "buildingType",
-            area_building as "areaBuilding", area_land as "areaLand",
-            price, price_per_ping as "pricePerPing", 
-            floor, total_floors as "totalFloors",
-            build_year as "buildYear", transaction_date as "transactionDate",
-            transaction_type as "transactionType", 'sale' as "type"
-          FROM real_estate_transactions 
-          WHERE district = $1
-          ORDER BY transaction_date DESC
-        `),
-        pool.query(`
-          SELECT 
-            id, city, district, project_name as "projectName", 
-            developer, address, unit_price as "unitPrice",
-            total_price as "totalPrice", area, floor,
-            transaction_date as "transactionDate", 'presale' as "type"
-          FROM presale_transactions 
-          WHERE district = $1
-          ORDER BY transaction_date DESC
-        `)
-      ]);
-
-      return NextResponse.json({
-        sales: sales.rows,
-        presales: presales.rows,
-        total: sales.rows.length + presales.rows.length
-      });
+      `);
+      return NextResponse.json({ data: result.rows, count: result.rows.length });
     }
+    
+    // Return both
+    const [sales, presales] = await Promise.all([
+      pool.query(`
+        SELECT 
+          id, city, district, road as "address", building_type as "buildingType",
+          area_building as "areaBuilding", area_land as "areaLand",
+          price, price_per_ping as "pricePerPing", 
+          floor, total_floors as "totalFloors",
+          build_year as "buildYear", transaction_date as "transactionDate",
+          transaction_type as "transactionType", 'sale' as "type"
+        FROM real_estate_transactions 
+        WHERE district = '後龍鎮'
+        ORDER BY transaction_date DESC
+      `),
+      pool.query(`
+        SELECT 
+          id, city, district, project_name as "projectName", 
+          developer, address, unit_price as "unitPrice",
+          total_price as "totalPrice", area, floor,
+          transaction_date as "transactionDate", 'presale' as "type"
+        FROM presale_transactions 
+        WHERE district = '後龍鎮'
+        ORDER BY transaction_date DESC
+      `)
+    ]);
 
-    const result = await pool.query(query, params);
     return NextResponse.json({
-      data: result.rows,
-      count: result.rows.length
+      sales: sales.rows,
+      presales: presales.rows,
+      total: sales.rows.length + presales.rows.length
     });
 
   } catch (error) {
